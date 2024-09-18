@@ -1,0 +1,31 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: My workflow
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    steps:
+      - name: Say hello
+        uses: docker://golang:1.20.3-alpine3.17
+        shell: sh
+        run: |
+          echo "hello world"
+      - name: Upload artifact using action
+        if: ${{ vars.workflow_execution_env != 'production' }}
+        uses: docker://020229604682.dkr.ecr.us-east-1.amazonaws.com/actions/assets-plugin-chain-utils:latest
+        with:
+          entrypoint: assets-plugin-chain-utils
+          args: upload-binary
+        env:
+          INPUT_CLOUDBEES_API_TOKEN: ${{ cloudbees.api.token }}
+          INPUT_CLOUDBEES_API_URL: ${{ cloudbees.api.url }}
+          INPUT_FILE_PATH: "container-image.tar"
+          INPUT_FILE_TYPE: "container"
+          INPUT_STEP_ID: $${{ step.id }}
+          INPUT_NOTIFY_ASSET_SERVICE: "true"
+          INPUT_DEBUG: "true"
